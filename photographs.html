@@ -32,11 +32,10 @@
 
     .gallery img {
       display: block;
-      width: auto;
-      max-width: 92%;
-      height: auto;
-      max-height: 90vh;
-      margin: 0 auto 150px auto;
+      width: min(900px, 90vw);
+      height: min(600px, 70vh);
+      object-fit: contain;
+      margin: 0 auto 30px auto;
 
       opacity: 0;
       transform: translateY(20px);
