@@ -80,6 +80,16 @@
   <img src="photographs/foto-29.jpg" alt="Davide Albanese 10">
   <img src="photographs/foto-30.jpg" alt="Davide Albanese 11">
   <img src="photographs/foto-31.jpg" alt="Davide Albanese 12">
+ </main>
 
+<script>
+  const gallery = document.querySelector('.gallery');
+  const images = Array.from(gallery.querySelectorAll('img'));
+
+  images.sort(() => Math.random() - 0.5);
+
+  images.forEach(img => gallery.appendChild(img));
+</script>
+  
 </body>
 </html>
