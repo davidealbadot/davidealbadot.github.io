@@ -17,6 +17,10 @@
       overscroll-behavior-y: none;
     }
 
+    html.zooming {
+      scroll-snap-type: none;
+    }
+
     body {
       background: #000;
       color: #fff;
@@ -28,27 +32,66 @@
       width: 100%;
     }
 
-    .gallery img {
-      display: block;
+    .slide {
       width: 100%;
       height: 100vh;
       height: 100dvh;
-      object-fit: cover;          /* riempie tutto lo schermo */
+      display: flex;
+      align-items: center;
+      justify-content: center;
       scroll-snap-align: start;
       scroll-snap-stop: always;
+      overflow: hidden;
+      background: #000;
+      position: relative;
+    }
+
+    .photo-frame {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .photo-frame img {
+      display: block;
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
       opacity: 0;
-      transition: opacity 0.35s ease-out;
+      transition: opacity 0.3s ease;
+      cursor: zoom-in;
+      -webkit-user-drag: none;
+      user-select: none;
     }
 
     /* Prima foto: visibile immediatamente */
-    .gallery img:first-child {
+    .slide:first-child .photo-frame img {
       opacity: 1;
       transition: none;
     }
 
-    /* Le altre appaiono con un fade leggero quando entrano */
-    .gallery img.visible {
+    /* Fade-in quando la slide entra in viewport */
+    .slide.visible .photo-frame img {
       opacity: 1;
+    }
+
+    /* Stato zoomato: scrollabile per navigare l'immagine */
+    .slide.zoomed .photo-frame {
+      overflow: auto;
+      align-items: flex-start;
+      justify-content: flex-start;
+      cursor: grab;
+    }
+
+    .slide.zoomed .photo-frame img {
+      max-width: none;
+      max-height: none;
+      cursor: grab;
     }
   </style>
 
@@ -56,37 +99,38 @@
 <body>
 
  <main class="gallery">
-  <img src="photographs/foto-02.jpg" alt="Davide Albanese 1">
-  <img src="photographs/foto-10.jpg" alt="Davide Albanese 2" loading="lazy">
-  <img src="photographs/foto-13.jpg" alt="Davide Albanese 3" loading="lazy">
-  <img src="photographs/foto-14.jpg" alt="Davide Albanese 4" loading="lazy">
-  <img src="photographs/foto-15.jpg" alt="Davide Albanese 5" loading="lazy">
-  <img src="photographs/foto-16.jpg" alt="Davide Albanese 6" loading="lazy">
-  <img src="photographs/foto-22.jpg" alt="Davide Albanese 7" loading="lazy">
-  <img src="photographs/foto-23.jpg" alt="Davide Albanese 8" loading="lazy">
-  <img src="photographs/foto-27.jpg" alt="Davide Albanese 9" loading="lazy">
-  <img src="photographs/foto-29.jpg" alt="Davide Albanese 10" loading="lazy">
-  <img src="photographs/foto-30.jpg" alt="Davide Albanese 11" loading="lazy">
-  <img src="photographs/foto-31.jpg" alt="Davide Albanese 12" loading="lazy">
+  <div class="slide"><div class="photo-frame"><img src="photographs/foto-02.jpg" alt="Davide Albanese 1"></div></div>
+  <div class="slide"><div class="photo-frame"><img src="photographs/foto-10.jpg" alt="Davide Albanese 2" loading="lazy"></div></div>
+  <div class="slide"><div class="photo-frame"><img src="photographs/foto-13.jpg" alt="Davide Albanese 3" loading="lazy"></div></div>
+  <div class="slide"><div class="photo-frame"><img src="photographs/foto-14.jpg" alt="Davide Albanese 4" loading="lazy"></div></div>
+  <div class="slide"><div class="photo-frame"><img src="photographs/foto-15.jpg" alt="Davide Albanese 5" loading="lazy"></div></div>
+  <div class="slide"><div class="photo-frame"><img src="photographs/foto-16.jpg" alt="Davide Albanese 6" loading="lazy"></div></div>
+  <div class="slide"><div class="photo-frame"><img src="photographs/foto-22.jpg" alt="Davide Albanese 7" loading="lazy"></div></div>
+  <div class="slide"><div class="photo-frame"><img src="photographs/foto-23.jpg" alt="Davide Albanese 8" loading="lazy"></div></div>
+  <div class="slide"><div class="photo-frame"><img src="photographs/foto-27.jpg" alt="Davide Albanese 9" loading="lazy"></div></div>
+  <div class="slide"><div class="photo-frame"><img src="photographs/foto-29.jpg" alt="Davide Albanese 10" loading="lazy"></div></div>
+  <div class="slide"><div class="photo-frame"><img src="photographs/foto-30.jpg" alt="Davide Albanese 11" loading="lazy"></div></div>
+  <div class="slide"><div class="photo-frame"><img src="photographs/foto-31.jpg" alt="Davide Albanese 12" loading="lazy"></div></div>
  </main>
 
 <script>
   const gallery = document.querySelector('.gallery');
-  const images = Array.from(gallery.querySelectorAll('img'));
+  const slides = Array.from(gallery.querySelectorAll('.slide'));
 
-  // Shuffle
-  images.sort(() => Math.random() - 0.5);
+  // Shuffle efficiente
+  slides.sort(() => Math.random() - 0.5);
   const fragment = document.createDocumentFragment();
-  images.forEach(img => fragment.appendChild(img));
+  slides.forEach(s => fragment.appendChild(s));
   gallery.appendChild(fragment);
 
   // Prima foto: carica subito
-  if (images[0]) {
-    images[0].loading = 'eager';
-    images[0].fetchPriority = 'high';
+  const firstImg = slides[0].querySelector('img');
+  if (firstImg) {
+    firstImg.loading = 'eager';
+    firstImg.fetchPriority = 'high';
   }
 
-  // Fade-in progressivo senza movimento
+  // Fade-in progressivo
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
@@ -99,8 +143,30 @@
     rootMargin: '50px 0px'
   });
 
-  images.forEach((img, index) => {
-    if (index !== 0) observer.observe(img);
+  slides.forEach((slide, index) => {
+    if (index !== 0) observer.observe(slide);
+  });
+
+  // Zoom: click per ingrandire, click per tornare indietro
+  slides.forEach(slide => {
+    const frame = slide.querySelector('.photo-frame');
+    const img = frame.querySelector('img');
+
+    frame.addEventListener('click', () => {
+      const isZoomed = slide.classList.toggle('zoomed');
+
+      if (isZoomed) {
+        // Disabilita lo scroll-snap della pagina mentre si naviga la foto zoomata
+        document.documentElement.classList.add('zooming');
+        // Centra lo scroll sull'immagine
+        requestAnimationFrame(() => {
+          frame.scrollLeft = (img.scrollWidth - frame.clientWidth) / 2;
+          frame.scrollTop = (img.scrollHeight - frame.clientHeight) / 2;
+        });
+      } else {
+        document.documentElement.classList.remove('zooming');
+      }
+    });
   });
 </script>
 
