@@ -36,7 +36,6 @@
       display: none;
       align-items: center;
       justify-content: center;
-      /* Più spazio in basso per i pulsanti, meno in alto */
       padding: 30px 20px 110px;
     }
 
@@ -73,7 +72,7 @@
       opacity: 1;
     }
 
-    /* Blocco pulsanti unico al centro in basso */
+    /* Blocco pulsanti PS2 unito al centro in basso */
     .nav-cluster {
       position: fixed;
       bottom: 16px;
@@ -119,7 +118,6 @@
       stroke-linejoin: round;
     }
 
-    /* Su: verdino chiaro */
     .ps-btn.up {
       background: rgba(180, 220, 180, 0.35);
     }
@@ -128,7 +126,6 @@
       background: rgba(180, 220, 180, 0.5);
     }
 
-    /* Giù: azzurrino chiaro */
     .ps-btn.down {
       background: rgba(200, 220, 245, 0.45);
     }
@@ -141,48 +138,78 @@
     .lightbox {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.92);
+      background: rgba(0,0,0,0.94);
       display: none;
-      align-items: center;
-      justify-content: center;
       z-index: 1000;
-      padding: 20px;
+      overflow: hidden;
     }
 
     .lightbox.open {
       display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .lightbox.open.explore {
+      display: block;
+      overflow: auto;
+      padding: 0;
+      cursor: grab;
+      -webkit-overflow-scrolling: touch;
     }
 
     .lightbox img {
+      display: block;
       max-width: 100%;
       max-height: 100%;
       object-fit: contain;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      margin: 0 auto;
     }
 
-    .close-btn {
+    .lightbox.explore img {
+      max-width: none;
+      max-height: none;
+      width: 220vw;
+      height: auto;
+      margin: 0;
+      cursor: grab;
+    }
+
+    /* Tasto Start stile PlayStation */
+    .start-btn {
       position: absolute;
-      top: 20px;
-      right: 20px;
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.15);
-      border: 1px solid rgba(255,255,255,0.3);
-      color: #fff;
-      font-size: 28px;
-      line-height: 1;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 32px;
+      border-radius: 20px;
+      border: 2px solid rgba(255,255,255,0.35);
+      background: rgba(160, 160, 160, 0.25);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: #f0f0f0;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      backdrop-filter: blur(4px);
-      -webkit-backdrop-filter: blur(4px);
-      transition: background 0.2s ease;
+      transition: all 0.2s ease;
+      z-index: 1001;
+      display: none;
     }
 
-    .close-btn:hover {
-      background: rgba(255,255,255,0.3);
+    .lightbox.open .start-btn {
+      display: block;
+    }
+
+    .start-btn:hover {
+      background: rgba(180, 180, 180, 0.4);
+      border-color: rgba(255,255,255,0.6);
+    }
+
+    .start-btn:active {
+      transform: translateX(-50%) scale(0.9);
     }
 
     @media (max-width: 600px) {
@@ -191,6 +218,7 @@
       .nav-cluster { padding: 8px 10px; bottom: 12px; }
       .ps-btn { width: 40px; height: 40px; }
       .ps-btn svg { width: 18px; height: 18px; }
+      .start-btn { bottom: 20px; padding: 8px 26px; font-size: 10px; }
     }
   </style>
 </head>
@@ -221,8 +249,8 @@
   </div>
 
   <div class="lightbox" id="lightbox">
-    <button class="close-btn" id="closeBtn" aria-label="Chiudi">×</button>
     <img src="" alt="" id="lightboxImg">
+    <button class="start-btn" id="startBtn">START</button>
   </div>
 
   <script>
@@ -253,7 +281,6 @@
       showSlide(current);
     }
 
-    // Prima foto visibile subito
     showSlide(0);
     const firstImg = slides[0].querySelector('img');
     if (firstImg) {
@@ -261,50 +288,99 @@
       firstImg.fetchPriority = 'high';
     }
 
-    // Pulsanti
     document.getElementById('btnPrev').addEventListener('click', prevSlide);
     document.getElementById('btnNext').addEventListener('click', nextSlide);
 
-    // Tastiera
     document.addEventListener('keydown', (e) => {
       if (e.key === 'ArrowUp') prevSlide();
       if (e.key === 'ArrowDown') nextSlide();
     });
 
-    // Lightbox
+    // Lightbox + History API per tasto indietro nativo
     const lightbox = document.getElementById('lightbox');
     const lightboxImg = document.getElementById('lightboxImg');
-    const closeBtn = document.getElementById('closeBtn');
+    const startBtn = document.getElementById('startBtn');
+
+    function openLightbox(src, alt) {
+      lightboxImg.src = src;
+      lightboxImg.alt = alt;
+      lightbox.classList.add('open');
+      history.pushState({ lightbox: true }, '');
+    }
+
+    function closeLightbox() {
+      if (!lightbox.classList.contains('open')) return;
+      lightbox.classList.remove('open');
+      lightbox.classList.remove('explore');
+      lightboxImg.src = '';
+      lightbox.scrollLeft = 0;
+      lightbox.scrollTop = 0;
+      if (history.state && history.state.lightbox) {
+        history.back();
+      }
+    }
+
+    window.addEventListener('popstate', () => {
+      if (lightbox.classList.contains('open')) {
+        lightbox.classList.remove('open');
+        lightbox.classList.remove('explore');
+        lightboxImg.src = '';
+        lightbox.scrollLeft = 0;
+        lightbox.scrollTop = 0;
+      }
+    });
 
     slides.forEach(slide => {
       const polaroid = slide.querySelector('.polaroid');
       polaroid.addEventListener('click', () => {
-        const src = slide.dataset.src;
-        lightboxImg.src = src;
-        lightboxImg.alt = polaroid.querySelector('img').alt;
-        lightbox.classList.add('open');
+        openLightbox(slide.dataset.src, polaroid.querySelector('img').alt);
       });
     });
 
-    function closeLightbox() {
-      lightbox.classList.remove('open');
-      lightboxImg.src = '';
-    }
-
-    closeBtn.addEventListener('click', closeLightbox);
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && lightbox.classList.contains('open')) closeLightbox();
+    // Tasto Start: toggle modalità esplora / zoom
+    startBtn.addEventListener('click', () => {
+      const enteringExplore = !lightbox.classList.contains('explore');
+      if (!enteringExplore) {
+        lightbox.scrollLeft = 0;
+        lightbox.scrollTop = 0;
+      }
+      lightbox.classList.toggle('explore');
+      if (enteringExplore) {
+        requestAnimationFrame(() => {
+          lightbox.scrollLeft = (lightboxImg.scrollWidth - lightbox.clientWidth) / 2;
+          lightbox.scrollTop = (lightboxImg.scrollHeight - lightbox.clientHeight) / 2;
+        });
+      }
     });
 
-    // Blocca ogni scroll/gesto touch
-    document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
-    document.addEventListener('wheel', (e) => e.preventDefault(), { passive: false });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && lightbox.classList.contains('open')) {
+        closeLightbox();
+      }
+    });
+
+    // Blocca ogni scroll/gesto touch, tranne nel lightbox explore
+    document.addEventListener('touchmove', (e) => {
+      if (lightbox.classList.contains('open') && lightbox.classList.contains('explore')) {
+        return;
+      }
+      e.preventDefault();
+    }, { passive: false });
+
+    document.addEventListener('wheel', (e) => {
+      if (lightbox.classList.contains('open') && lightbox.classList.contains('explore')) {
+        return;
+      }
+      e.preventDefault();
+    }, { passive: false });
+
     let lastTouchEnd = 0;
     document.addEventListener('touchend', (e) => {
       const now = Date.now();
       if (now - lastTouchEnd <= 300) e.preventDefault();
       lastTouchEnd = now;
     }, { passive: false });
+
     document.addEventListener('gesturestart', (e) => e.preventDefault());
     document.addEventListener('gesturechange', (e) => e.preventDefault());
     document.addEventListener('gestureend', (e) => e.preventDefault());
