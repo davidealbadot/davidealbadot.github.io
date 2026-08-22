@@ -8,18 +8,21 @@
   <style>
     * {
       box-sizing: border-box;
-    }
-
-    html, body {
       margin: 0;
       padding: 0;
+    }
+
+    html {
+      scroll-snap-type: y mandatory;
+      scroll-behavior: smooth;
+      overscroll-behavior-y: none;
+    }
+
+    body {
       background: #fff;
       color: #111;
       font-family: Arial, sans-serif;
-      /* Abilita lo scroll snap su tutta la pagina */
-      scroll-snap-type: y mandatory;
       overflow-y: scroll;
-      scroll-behavior: smooth;
     }
 
     .gallery {
@@ -32,10 +35,10 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      /* Ogni sezione è un punto di snap */
       scroll-snap-align: start;
       scroll-snap-stop: always;
-      position: relative;
+      /* Isola il rendering per evitare ricalcoli globali */
+      contain: layout style;
     }
 
     .photo-section img {
@@ -45,60 +48,78 @@
       width: auto;
       height: auto;
       object-fit: contain;
+      
       opacity: 0;
-      transform: scale(0.96);
-      transition: opacity 0.8s ease, transform 0.8s ease;
+      transform: scale(0.95);
+      transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+      will-change: transform, opacity;
     }
 
-    /* Quando la sezione è visibile, l'immagine appare */
+    /* La prima immagine appare immediatamente, zero animazione */
+    .photo-section:first-child img {
+      opacity: 1;
+      transform: scale(1);
+      transition: none;
+    }
+
+    /* Le successive entrano con un fade veloce quando scrolli */
     .photo-section.visible img {
       opacity: 1;
       transform: scale(1);
     }
   </style>
-
 </head>
 <body>
 
  <main class="gallery">
-
   <div class="photo-section"><img src="photographs/foto-02.jpg" alt="Davide Albanese 1"></div>
-  <div class="photo-section"><img src="photographs/foto-10.jpg" alt="Davide Albanese 2"></div>
-  <div class="photo-section"><img src="photographs/foto-13.jpg" alt="Davide Albanese 3"></div>
-  <div class="photo-section"><img src="photographs/foto-14.jpg" alt="Davide Albanese 4"></div>
-  <div class="photo-section"><img src="photographs/foto-15.jpg" alt="Davide Albanese 5"></div>
-  <div class="photo-section"><img src="photographs/foto-16.jpg" alt="Davide Albanese 6"></div>
-  <div class="photo-section"><img src="photographs/foto-22.jpg" alt="Davide Albanese 7"></div>
-  <div class="photo-section"><img src="photographs/foto-23.jpg" alt="Davide Albanese 8"></div>
-  <div class="photo-section"><img src="photographs/foto-27.jpg" alt="Davide Albanese 9"></div>
-  <div class="photo-section"><img src="photographs/foto-29.jpg" alt="Davide Albanese 10"></div>
-  <div class="photo-section"><img src="photographs/foto-30.jpg" alt="Davide Albanese 11"></div>
-  <div class="photo-section"><img src="photographs/foto-31.jpg" alt="Davide Albanese 12"></div>
-
+  <div class="photo-section"><img src="photographs/foto-10.jpg" alt="Davide Albanese 2" loading="lazy"></div>
+  <div class="photo-section"><img src="photographs/foto-13.jpg" alt="Davide Albanese 3" loading="lazy"></div>
+  <div class="photo-section"><img src="photographs/foto-14.jpg" alt="Davide Albanese 4" loading="lazy"></div>
+  <div class="photo-section"><img src="photographs/foto-15.jpg" alt="Davide Albanese 5" loading="lazy"></div>
+  <div class="photo-section"><img src="photographs/foto-16.jpg" alt="Davide Albanese 6" loading="lazy"></div>
+  <div class="photo-section"><img src="photographs/foto-22.jpg" alt="Davide Albanese 7" loading="lazy"></div>
+  <div class="photo-section"><img src="photographs/foto-23.jpg" alt="Davide Albanese 8" loading="lazy"></div>
+  <div class="photo-section"><img src="photographs/foto-27.jpg" alt="Davide Albanese 9" loading="lazy"></div>
+  <div class="photo-section"><img src="photographs/foto-29.jpg" alt="Davide Albanese 10" loading="lazy"></div>
+  <div class="photo-section"><img src="photographs/foto-30.jpg" alt="Davide Albanese 11" loading="lazy"></div>
+  <div class="photo-section"><img src="photographs/foto-31.jpg" alt="Davide Albanese 12" loading="lazy"></div>
  </main>
 
 <script>
-  // Mescola le foto in ordine casuale
   const gallery = document.querySelector('.gallery');
   const sections = Array.from(gallery.querySelectorAll('.photo-section'));
+  
+  // Shuffle efficiente: un solo reflow con DocumentFragment
   sections.sort(() => Math.random() - 0.5);
-  sections.forEach(sec => gallery.appendChild(sec));
+  const fragment = document.createDocumentFragment();
+  sections.forEach(sec => fragment.appendChild(sec));
+  gallery.appendChild(fragment);
 
-  // Intersection Observer per far apparire l'immagine con fade-in
-  // solo quando la sezione entra nella viewport
+  // La prima immagine dopo lo shuffle carica subito (priorità alta)
+  const firstImg = sections[0].querySelector('img');
+  if (firstImg) {
+    firstImg.loading = 'eager';
+    firstImg.fetchPriority = 'high';
+  }
+
+  // IntersectionObserver leggero: precarica 100px prima, poi smette di osservare
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
         entry.target.classList.add('visible');
-      } else {
-        entry.target.classList.remove('visible');
+        observer.unobserve(entry.target); // Libera risorse
       }
     });
   }, {
-    threshold: 0.4
+    threshold: 0.15,
+    rootMargin: '100px 0px'
   });
 
-  sections.forEach(sec => observer.observe(sec));
+  // Osserva tutte tranne la prima (già visibile)
+  sections.forEach((sec, index) => {
+    if (index !== 0) observer.observe(sec);
+  });
 </script>
 
 </body>
