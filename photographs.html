@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
   <title>Photographs</title>
   <style>
     * {
@@ -14,6 +14,7 @@
     html {
       scroll-snap-type: y mandatory;
       overscroll-behavior-y: none;
+      touch-action: pan-y;
     }
 
     body {
@@ -21,6 +22,7 @@
       color: #222;
       font-family: 'Courier New', Courier, monospace;
       overflow-y: scroll;
+      -webkit-text-size-adjust: 100%;
     }
 
     .gallery {
@@ -43,6 +45,12 @@
       padding: 14px 14px 55px 14px;
       width: min(420px, 80vw);
       box-shadow: 0 14px 40px rgba(0,0,0,0.14), 0 4px 14px rgba(0,0,0,0.1);
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    .polaroid:active {
+      transform: scale(0.98);
     }
 
     .polaroid img {
@@ -55,36 +63,88 @@
       filter: sepia(6%) contrast(102%);
       opacity: 0;
       transition: opacity 0.5s ease;
+      pointer-events: none; /* il click passa al .polaroid */
     }
 
-    /* Prima foto: visibile subito */
     .slide:first-child .polaroid img {
       opacity: 1;
       transition: none;
     }
 
-    /* Fade-in quando entra in viewport */
     .slide.visible .polaroid img {
       opacity: 1;
+    }
+
+    /* Lightbox */
+    .lightbox {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.92);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+
+    .lightbox.open {
+      display: flex;
+    }
+
+    .lightbox img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: #fff;
+      font-size: 24px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      transition: background 0.2s ease;
+    }
+
+    .close-btn:hover {
+      background: rgba(255,255,255,0.3);
     }
   </style>
 </head>
 <body>
 
   <main class="gallery">
-    <div class="slide"><div class="polaroid"><img src="photographs/foto-02.jpg" alt="Davide Albanese 1"></div></div>
-    <div class="slide"><div class="polaroid"><img src="photographs/foto-10.jpg" alt="Davide Albanese 2" loading="lazy"></div></div>
-    <div class="slide"><div class="polaroid"><img src="photographs/foto-13.jpg" alt="Davide Albanese 3" loading="lazy"></div></div>
-    <div class="slide"><div class="polaroid"><img src="photographs/foto-14.jpg" alt="Davide Albanese 4" loading="lazy"></div></div>
-    <div class="slide"><div class="polaroid"><img src="photographs/foto-15.jpg" alt="Davide Albanese 5" loading="lazy"></div></div>
-    <div class="slide"><div class="polaroid"><img src="photographs/foto-16.jpg" alt="Davide Albanese 6" loading="lazy"></div></div>
-    <div class="slide"><div class="polaroid"><img src="photographs/foto-22.jpg" alt="Davide Albanese 7" loading="lazy"></div></div>
-    <div class="slide"><div class="polaroid"><img src="photographs/foto-23.jpg" alt="Davide Albanese 8" loading="lazy"></div></div>
-    <div class="slide"><div class="polaroid"><img src="photographs/foto-27.jpg" alt="Davide Albanese 9" loading="lazy"></div></div>
-    <div class="slide"><div class="polaroid"><img src="photographs/foto-29.jpg" alt="Davide Albanese 10" loading="lazy"></div></div>
-    <div class="slide"><div class="polaroid"><img src="photographs/foto-30.jpg" alt="Davide Albanese 11" loading="lazy"></div></div>
-    <div class="slide"><div class="polaroid"><img src="photographs/foto-31.jpg" alt="Davide Albanese 12" loading="lazy"></div></div>
+    <div class="slide"><div class="polaroid" data-src="photographs/foto-02.jpg"><img src="photographs/foto-02.jpg" alt="Davide Albanese 1"></div></div>
+    <div class="slide"><div class="polaroid" data-src="photographs/foto-10.jpg"><img src="photographs/foto-10.jpg" alt="Davide Albanese 2" loading="lazy"></div></div>
+    <div class="slide"><div class="polaroid" data-src="photographs/foto-13.jpg"><img src="photographs/foto-13.jpg" alt="Davide Albanese 3" loading="lazy"></div></div>
+    <div class="slide"><div class="polaroid" data-src="photographs/foto-14.jpg"><img src="photographs/foto-14.jpg" alt="Davide Albanese 4" loading="lazy"></div></div>
+    <div class="slide"><div class="polaroid" data-src="photographs/foto-15.jpg"><img src="photographs/foto-15.jpg" alt="Davide Albanese 5" loading="lazy"></div></div>
+    <div class="slide"><div class="polaroid" data-src="photographs/foto-16.jpg"><img src="photographs/foto-16.jpg" alt="Davide Albanese 6" loading="lazy"></div></div>
+    <div class="slide"><div class="polaroid" data-src="photographs/foto-22.jpg"><img src="photographs/foto-22.jpg" alt="Davide Albanese 7" loading="lazy"></div></div>
+    <div class="slide"><div class="polaroid" data-src="photographs/foto-23.jpg"><img src="photographs/foto-23.jpg" alt="Davide Albanese 8" loading="lazy"></div></div>
+    <div class="slide"><div class="polaroid" data-src="photographs/foto-27.jpg"><img src="photographs/foto-27.jpg" alt="Davide Albanese 9" loading="lazy"></div></div>
+    <div class="slide"><div class="polaroid" data-src="photographs/foto-29.jpg"><img src="photographs/foto-29.jpg" alt="Davide Albanese 10" loading="lazy"></div></div>
+    <div class="slide"><div class="polaroid" data-src="photographs/foto-30.jpg"><img src="photographs/foto-30.jpg" alt="Davide Albanese 11" loading="lazy"></div></div>
+    <div class="slide"><div class="polaroid" data-src="photographs/foto-31.jpg"><img src="photographs/foto-31.jpg" alt="Davide Albanese 12" loading="lazy"></div></div>
   </main>
+
+  <div class="lightbox" id="lightbox">
+    <button class="close-btn" id="closeBtn" aria-label="Chiudi">×</button>
+    <img src="" alt="" id="lightboxImg">
+  </div>
 
   <script>
     const gallery = document.querySelector('.gallery');
@@ -116,6 +176,57 @@
     slides.forEach((slide, index) => {
       if (index !== 0) observer.observe(slide);
     });
+
+    // Lightbox
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImg = document.getElementById('lightboxImg');
+    const closeBtn = document.getElementById('closeBtn');
+
+    slides.forEach(slide => {
+      const polaroid = slide.querySelector('.polaroid');
+      polaroid.addEventListener('click', () => {
+        const src = polaroid.dataset.src;
+        lightboxImg.src = src;
+        lightboxImg.alt = polaroid.querySelector('img').alt;
+        lightbox.classList.add('open');
+        document.body.style.overflow = 'hidden';
+      });
+    });
+
+    function closeLightbox() {
+      lightbox.classList.remove('open');
+      lightboxImg.src = '';
+      document.body.style.overflow = '';
+    }
+
+    closeBtn.addEventListener('click', closeLightbox);
+
+    // Chiudi anche con tasto ESC
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && lightbox.classList.contains('open')) {
+        closeLightbox();
+      }
+    });
+
+    // Blocca zoom su mobile (doppio tap, pinch)
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', (e) => {
+      const now = Date.now();
+      if (now - lastTouchEnd <= 300) {
+        e.preventDefault();
+      }
+      lastTouchEnd = now;
+    }, { passive: false });
+
+    document.addEventListener('touchmove', (e) => {
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
+    }, { passive: false });
+
+    document.addEventListener('gesturestart', (e) => e.preventDefault());
+    document.addEventListener('gesturechange', (e) => e.preventDefault());
+    document.addEventListener('gestureend', (e) => e.preventDefault());
   </script>
 
 </body>
