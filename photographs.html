@@ -33,15 +33,22 @@
     .slide {
       position: absolute;
       inset: 0;
-      display: none;
+      display: flex;
       align-items: center;
       justify-content: center;
       padding: 30px 20px 100px;
-      contain: paint layout;
+      visibility: hidden;
+      opacity: 0;
+      /* Nessuna transizione sul contenitore = zero reflow */
+      contain: strict;
+      content-visibility: auto;
     }
 
     .slide.active {
-      display: flex;
+      visibility: visible;
+      opacity: 1;
+      content-visibility: visible;
+      z-index: 1;
     }
 
     .polaroid {
@@ -50,12 +57,12 @@
       width: min(400px, 78vw);
       box-shadow: 0 14px 40px rgba(0,0,0,0.14), 0 4px 14px rgba(0,0,0,0.1);
       cursor: pointer;
-      transition: transform 0.15s ease;
+      transform: translateZ(0);
       will-change: transform;
     }
 
     .polaroid:active {
-      transform: scale(0.97);
+      transform: scale(0.97) translateZ(0);
     }
 
     .polaroid img {
@@ -64,16 +71,11 @@
       height: auto;
       max-height: 58vh;
       object-fit: contain;
-      filter: sepia(6%) contrast(102%);
-      opacity: 0;
+      /* Filtro rimosso — causa buffer di rendering */
+      opacity: 1;
       transform: translateZ(0);
-      transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       backface-visibility: hidden;
       pointer-events: none;
-    }
-
-    .slide.active .polaroid img {
-      opacity: 1;
     }
 
     /* Tasto refresh */
@@ -94,7 +96,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: transform 0.15s ease, background 0.2s ease;
+      transition: transform 0.15s ease;
       z-index: 100;
       will-change: transform;
     }
@@ -253,12 +255,20 @@
     const total = slides.length;
     const preloaded = new Set();
 
-    // Precarica un'immagine in background
-    function preload(src) {
+    // Precarica e DECODIFICA un'immagine (evita buffer di rendering)
+    async function preload(src) {
       if (preloaded.has(src)) return;
       const img = new Image();
       img.src = src;
+      await img.decode(); // Aspetta che sia pronta nella GPU
       preloaded.add(src);
+    }
+
+    function preloadQuiet(src) {
+      if (preloaded.has(src)) return;
+      const img = new Image();
+      img.src = src;
+      img.decode().then(() => preloaded.add(src));
     }
 
     // Fisher-Yates shuffle
@@ -276,29 +286,31 @@
     function showSlideByViewPos(pos) {
       const slideIndex = viewOrder[pos];
       slides.forEach((s, i) => s.classList.toggle('active', i === slideIndex));
-      // Precarica la prossima immagine in anticipo
+      // Precarica la prossima in silenzio
       const nextPos = (pos + 1) % total;
-      const nextSrc = slides[viewOrder[nextPos]].dataset.src;
-      preload(nextSrc);
+      preloadQuiet(slides[viewOrder[nextPos]].dataset.src);
     }
 
-    function refresh() {
+    async function refresh() {
       currentPos++;
       if (currentPos >= total) {
         viewOrder = shuffle([...Array(total).keys()]);
         currentPos = 0;
       }
+      // Decodifica prima di mostrare = zero buffer
+      const nextSlide = slides[viewOrder[currentPos]];
+      await preload(nextSlide.dataset.src);
       showSlideByViewPos(currentPos);
     }
 
-    // Inizializza
+    // Mostra la prima
     showSlideByViewPos(0);
 
-    // Precarica tutte le immagini subito dopo il primo paint
+    // Precarica tutto in background dopo il primo paint
     requestAnimationFrame(() => {
       setTimeout(() => {
-        slides.forEach(s => preload(s.dataset.src));
-      }, 50);
+        slides.forEach(s => preloadQuiet(s.dataset.src));
+      }, 100);
     });
 
     document.getElementById('refreshBtn').addEventListener('click', refresh);
