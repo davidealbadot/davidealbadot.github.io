@@ -72,7 +72,7 @@
       opacity: 1;
     }
 
-    /* Blocco pulsanti PS2 unito al centro in basso */
+    /* Pulsanti PS2 uniti al centro in basso */
     .nav-cluster {
       position: fixed;
       bottom: 16px;
@@ -176,40 +176,48 @@
       cursor: grab;
     }
 
-    /* Tasto Start stile PlayStation */
-    .start-btn {
+    /* Tasto Play stile PS2 */
+    .play-btn {
       position: absolute;
       bottom: 28px;
       left: 50%;
       transform: translateX(-50%);
-      padding: 10px 32px;
-      border-radius: 20px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
       border: 2px solid rgba(255,255,255,0.35);
       background: rgba(160, 160, 160, 0.25);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
-      color: #f0f0f0;
-      font-family: 'Courier New', monospace;
-      font-size: 11px;
-      letter-spacing: 4px;
-      text-transform: uppercase;
       cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
       transition: all 0.2s ease;
       z-index: 1001;
+    }
+
+    .lightbox.open .play-btn {
+      display: flex;
+    }
+
+    .lightbox.open.explore .play-btn {
       display: none;
     }
 
-    .lightbox.open .start-btn {
-      display: block;
-    }
-
-    .start-btn:hover {
+    .play-btn:hover {
       background: rgba(180, 180, 180, 0.4);
       border-color: rgba(255,255,255,0.6);
     }
 
-    .start-btn:active {
+    .play-btn:active {
       transform: translateX(-50%) scale(0.9);
+    }
+
+    .play-btn svg {
+      width: 20px;
+      height: 20px;
+      margin-left: 3px;
     }
 
     @media (max-width: 600px) {
@@ -218,7 +226,8 @@
       .nav-cluster { padding: 8px 10px; bottom: 12px; }
       .ps-btn { width: 40px; height: 40px; }
       .ps-btn svg { width: 18px; height: 18px; }
-      .start-btn { bottom: 20px; padding: 8px 26px; font-size: 10px; }
+      .play-btn { bottom: 20px; width: 50px; height: 50px; }
+      .play-btn svg { width: 18px; height: 18px; }
     }
   </style>
 </head>
@@ -250,7 +259,11 @@
 
   <div class="lightbox" id="lightbox">
     <img src="" alt="" id="lightboxImg">
-    <button class="start-btn" id="startBtn">START</button>
+    <button class="play-btn" id="playBtn" aria-label="Esplora">
+      <svg viewBox="0 0 24 24" width="20" height="20">
+        <polygon points="6,3 21,12 6,21" fill="#fff"/>
+      </svg>
+    </button>
   </div>
 
   <script>
@@ -296,37 +309,51 @@
       if (e.key === 'ArrowDown') nextSlide();
     });
 
-    // Lightbox + History API per tasto indietro nativo
+    // Lightbox + History API (due livelli)
     const lightbox = document.getElementById('lightbox');
     const lightboxImg = document.getElementById('lightboxImg');
-    const startBtn = document.getElementById('startBtn');
+    const playBtn = document.getElementById('playBtn');
+    let historyDepth = 0;
 
     function openLightbox(src, alt) {
       lightboxImg.src = src;
       lightboxImg.alt = alt;
       lightbox.classList.add('open');
       history.pushState({ lightbox: true }, '');
+      historyDepth = 1;
+    }
+
+    function enterExplore() {
+      lightbox.classList.add('explore');
+      history.pushState({ lightbox: true, explore: true }, '');
+      historyDepth = 2;
+      requestAnimationFrame(() => {
+        lightbox.scrollLeft = (lightboxImg.scrollWidth - lightbox.clientWidth) / 2;
+        lightbox.scrollTop = (lightboxImg.scrollHeight - lightbox.clientHeight) / 2;
+      });
+    }
+
+    function exitExplore() {
+      lightbox.classList.remove('explore');
+      lightbox.scrollLeft = 0;
+      lightbox.scrollTop = 0;
+      historyDepth = 1;
     }
 
     function closeLightbox() {
-      if (!lightbox.classList.contains('open')) return;
       lightbox.classList.remove('open');
       lightbox.classList.remove('explore');
       lightboxImg.src = '';
       lightbox.scrollLeft = 0;
       lightbox.scrollTop = 0;
-      if (history.state && history.state.lightbox) {
-        history.back();
-      }
+      historyDepth = 0;
     }
 
     window.addEventListener('popstate', () => {
-      if (lightbox.classList.contains('open')) {
-        lightbox.classList.remove('open');
-        lightbox.classList.remove('explore');
-        lightboxImg.src = '';
-        lightbox.scrollLeft = 0;
-        lightbox.scrollTop = 0;
+      if (historyDepth === 2) {
+        exitExplore();
+      } else if (historyDepth === 1) {
+        closeLightbox();
       }
     });
 
@@ -337,40 +364,24 @@
       });
     });
 
-    // Tasto Start: toggle modalità esplora / zoom
-    startBtn.addEventListener('click', () => {
-      const enteringExplore = !lightbox.classList.contains('explore');
-      if (!enteringExplore) {
-        lightbox.scrollLeft = 0;
-        lightbox.scrollTop = 0;
-      }
-      lightbox.classList.toggle('explore');
-      if (enteringExplore) {
-        requestAnimationFrame(() => {
-          lightbox.scrollLeft = (lightboxImg.scrollWidth - lightbox.clientWidth) / 2;
-          lightbox.scrollTop = (lightboxImg.scrollHeight - lightbox.clientHeight) / 2;
-        });
-      }
-    });
+    playBtn.addEventListener('click', enterExplore);
 
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && lightbox.classList.contains('open')) {
+      if (e.key === 'Escape' && historyDepth > 0) {
+        const depth = historyDepth;
         closeLightbox();
+        if (depth > 0) history.go(-depth);
       }
     });
 
     // Blocca ogni scroll/gesto touch, tranne nel lightbox explore
     document.addEventListener('touchmove', (e) => {
-      if (lightbox.classList.contains('open') && lightbox.classList.contains('explore')) {
-        return;
-      }
+      if (lightbox.classList.contains('open') && lightbox.classList.contains('explore')) return;
       e.preventDefault();
     }, { passive: false });
 
     document.addEventListener('wheel', (e) => {
-      if (lightbox.classList.contains('open') && lightbox.classList.contains('explore')) {
-        return;
-      }
+      if (lightbox.classList.contains('open') && lightbox.classList.contains('explore')) return;
       e.preventDefault();
     }, { passive: false });
 
