@@ -8,20 +8,18 @@
   <style>
     * {
       box-sizing: border-box;
+    }
+
+    html, body {
       margin: 0;
       padding: 0;
-    }
-
-    html {
-      scroll-snap-type: y mandatory;
-      overscroll-behavior-y: none;
-    }
-
-    body {
       background: #fff;
       color: #111;
       font-family: Arial, sans-serif;
+      /* Abilita lo scroll snap su tutta la pagina */
+      scroll-snap-type: y mandatory;
       overflow-y: scroll;
+      scroll-behavior: smooth;
     }
 
     .gallery {
@@ -31,90 +29,76 @@
     .photo-section {
       width: 100%;
       height: 100vh;
-      height: 100dvh; /* compatibile con mobile */
       display: flex;
       align-items: center;
       justify-content: center;
+      /* Ogni sezione è un punto di snap */
       scroll-snap-align: start;
       scroll-snap-stop: always;
-      contain: layout style;
+      position: relative;
     }
 
     .photo-section img {
       display: block;
       max-width: 90vw;
       max-height: 85vh;
-      max-height: 85dvh;
       width: auto;
       height: auto;
       object-fit: contain;
-      /* Solo opacity, zero transform → zero movimento */
       opacity: 0;
-      transition: opacity 0.25s ease-out;
+      transform: scale(0.96);
+      transition: opacity 0.8s ease, transform 0.8s ease;
     }
 
-    /* Prima foto: visibile immediatamente, nessuna transizione */
-    .photo-section:first-child img {
-      opacity: 1;
-      transition: none;
-    }
-
-    /* Le altre: semplice fade, nessuno spostamento */
+    /* Quando la sezione è visibile, l'immagine appare */
     .photo-section.visible img {
       opacity: 1;
+      transform: scale(1);
     }
   </style>
+
 </head>
 <body>
 
  <main class="gallery">
+
   <div class="photo-section"><img src="photographs/foto-02.jpg" alt="Davide Albanese 1"></div>
-  <div class="photo-section"><img src="photographs/foto-10.jpg" alt="Davide Albanese 2" loading="lazy"></div>
-  <div class="photo-section"><img src="photographs/foto-13.jpg" alt="Davide Albanese 3" loading="lazy"></div>
-  <div class="photo-section"><img src="photographs/foto-14.jpg" alt="Davide Albanese 4" loading="lazy"></div>
-  <div class="photo-section"><img src="photographs/foto-15.jpg" alt="Davide Albanese 5" loading="lazy"></div>
-  <div class="photo-section"><img src="photographs/foto-16.jpg" alt="Davide Albanese 6" loading="lazy"></div>
-  <div class="photo-section"><img src="photographs/foto-22.jpg" alt="Davide Albanese 7" loading="lazy"></div>
-  <div class="photo-section"><img src="photographs/foto-23.jpg" alt="Davide Albanese 8" loading="lazy"></div>
-  <div class="photo-section"><img src="photographs/foto-27.jpg" alt="Davide Albanese 9" loading="lazy"></div>
-  <div class="photo-section"><img src="photographs/foto-29.jpg" alt="Davide Albanese 10" loading="lazy"></div>
-  <div class="photo-section"><img src="photographs/foto-30.jpg" alt="Davide Albanese 11" loading="lazy"></div>
-  <div class="photo-section"><img src="photographs/foto-31.jpg" alt="Davide Albanese 12" loading="lazy"></div>
+  <div class="photo-section"><img src="photographs/foto-10.jpg" alt="Davide Albanese 2"></div>
+  <div class="photo-section"><img src="photographs/foto-13.jpg" alt="Davide Albanese 3"></div>
+  <div class="photo-section"><img src="photographs/foto-14.jpg" alt="Davide Albanese 4"></div>
+  <div class="photo-section"><img src="photographs/foto-15.jpg" alt="Davide Albanese 5"></div>
+  <div class="photo-section"><img src="photographs/foto-16.jpg" alt="Davide Albanese 6"></div>
+  <div class="photo-section"><img src="photographs/foto-22.jpg" alt="Davide Albanese 7"></div>
+  <div class="photo-section"><img src="photographs/foto-23.jpg" alt="Davide Albanese 8"></div>
+  <div class="photo-section"><img src="photographs/foto-27.jpg" alt="Davide Albanese 9"></div>
+  <div class="photo-section"><img src="photographs/foto-29.jpg" alt="Davide Albanese 10"></div>
+  <div class="photo-section"><img src="photographs/foto-30.jpg" alt="Davide Albanese 11"></div>
+  <div class="photo-section"><img src="photographs/foto-31.jpg" alt="Davide Albanese 12"></div>
+
  </main>
 
 <script>
+  // Mescola le foto in ordine casuale
   const gallery = document.querySelector('.gallery');
   const sections = Array.from(gallery.querySelectorAll('.photo-section'));
-  
-  // Shuffle efficiente
   sections.sort(() => Math.random() - 0.5);
-  const fragment = document.createDocumentFragment();
-  sections.forEach(sec => fragment.appendChild(sec));
-  gallery.appendChild(fragment);
+  sections.forEach(sec => gallery.appendChild(sec));
 
-  // Prima foto: priorità alta
-  const firstImg = sections[0].querySelector('img');
-  if (firstImg) {
-    firstImg.loading = 'eager';
-    firstImg.fetchPriority = 'high';
-  }
-
-  // Observer minimale: solo fade, nessun transform
+  // Intersection Observer per far apparire l'immagine con fade-in
+  // solo quando la sezione entra nella viewport
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
         entry.target.classList.add('visible');
-        observer.unobserve(entry.target);
+      } else {
+        entry.target.classList.remove('visible');
       }
     });
   }, {
-    threshold: 0.1,
-    rootMargin: '50px 0px'
+    threshold: 0.4
   });
 
-  sections.forEach((sec, index) => {
-    if (index !== 0) observer.observe(sec);
-  });
+  sections.forEach(sec => observer.observe(sec));
 </script>
 
 </body>
