@@ -176,24 +176,29 @@
       cursor: grab;
     }
 
-    /* Tasto Play stile PS2 */
+    /* Tasto Start stile PlayStation 2 — ovale, grigio perlaceo */
     .play-btn {
       position: absolute;
       bottom: 28px;
       left: 50%;
       transform: translateX(-50%);
-      width: 56px;
-      height: 56px;
-      border-radius: 50%;
-      border: 2px solid rgba(255,255,255,0.35);
-      background: rgba(160, 160, 160, 0.25);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
+      width: 78px;
+      height: 34px;
+      border-radius: 17px;
+      border: 1px solid rgba(200, 200, 200, 0.45);
+      background: rgba(215, 215, 215, 0.3);
+      background: linear-gradient(180deg, rgba(230,230,230,0.35) 0%, rgba(195,195,195,0.25) 100%);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      box-shadow:
+        inset 0 1px 1px rgba(255,255,255,0.6),
+        inset 0 -1px 2px rgba(0,0,0,0.08),
+        0 4px 14px rgba(0,0,0,0.2);
       cursor: pointer;
       display: none;
       align-items: center;
       justify-content: center;
-      transition: all 0.2s ease;
+      transition: all 0.15s ease;
       z-index: 1001;
     }
 
@@ -206,18 +211,21 @@
     }
 
     .play-btn:hover {
-      background: rgba(180, 180, 180, 0.4);
-      border-color: rgba(255,255,255,0.6);
+      background: linear-gradient(180deg, rgba(240,240,240,0.4) 0%, rgba(205,205,205,0.3) 100%);
+      border-color: rgba(220, 220, 220, 0.6);
     }
 
     .play-btn:active {
-      transform: translateX(-50%) scale(0.9);
+      transform: translateX(-50%) scale(0.94);
+      box-shadow:
+        inset 0 2px 4px rgba(0,0,0,0.12),
+        inset 0 -1px 1px rgba(255,255,255,0.4);
     }
 
     .play-btn svg {
-      width: 20px;
-      height: 20px;
-      margin-left: 3px;
+      width: 14px;
+      height: 14px;
+      margin-left: 2px;
     }
 
     @media (max-width: 600px) {
@@ -226,8 +234,8 @@
       .nav-cluster { padding: 8px 10px; bottom: 12px; }
       .ps-btn { width: 40px; height: 40px; }
       .ps-btn svg { width: 18px; height: 18px; }
-      .play-btn { bottom: 20px; width: 50px; height: 50px; }
-      .play-btn svg { width: 18px; height: 18px; }
+      .play-btn { width: 70px; height: 30px; border-radius: 15px; bottom: 20px; }
+      .play-btn svg { width: 12px; height: 12px; }
     }
   </style>
 </head>
@@ -260,7 +268,7 @@
   <div class="lightbox" id="lightbox">
     <img src="" alt="" id="lightboxImg">
     <button class="play-btn" id="playBtn" aria-label="Esplora">
-      <svg viewBox="0 0 24 24" width="20" height="20">
+      <svg viewBox="0 0 24 24" width="14" height="14">
         <polygon points="6,3 21,12 6,21" fill="#fff"/>
       </svg>
     </button>
