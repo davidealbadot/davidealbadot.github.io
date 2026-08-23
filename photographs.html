@@ -70,21 +70,13 @@
       height: auto;
       max-height: 58vh;
       object-fit: contain;
-      /* Placeholder grigio mentre carica */
-      background: #f0f0f0;
-      opacity: 0;
-      transition: opacity 0.35s ease;
+      opacity: 1;
       transform: translateZ(0);
       backface-visibility: hidden;
       pointer-events: none;
     }
 
-    .polaroid img.loaded {
-      opacity: 1;
-      background: transparent;
-    }
-
-    /* Loader ellissi */
+    /* Loader ellissi: tre puntini pulsanti */
     .loader {
       position: fixed;
       inset: 0;
@@ -163,6 +155,11 @@
 
     .refresh-btn:active {
       transform: translateX(-50%) scale(0.88);
+    }
+
+    .refresh-btn.loading {
+      opacity: 0;
+      pointer-events: none;
     }
 
     .refresh-btn svg {
@@ -318,7 +315,16 @@
     const refreshBtn = document.getElementById('refreshBtn');
     const loader = document.getElementById('loader');
     const total = slides.length;
-    const MAX_WAIT_MS = 1000; // max 1 secondo di attesa
+
+    async function ensureReady(img) {
+      if (!img.complete) {
+        await new Promise(resolve => {
+          img.onload = resolve;
+          img.onerror = resolve;
+        });
+      }
+      try { await img.decode(); } catch(e) {}
+    }
 
     function shuffle(arr) {
       for (let i = arr.length - 1; i > 0; i--) {
@@ -331,7 +337,6 @@
     let viewOrder = shuffle([...Array(total).keys()]);
     let currentPos = 0;
     let isLoading = false;
-    let loadTimer = null;
 
     function hideAll() {
       slides.forEach(s => s.classList.remove('active'));
@@ -349,68 +354,34 @@
       refreshBtn.classList.remove('visible');
     }
 
-    function finishLoading() {
-      loader.classList.remove('active');
-      showRefresh();
-      isLoading = false;
-      if (loadTimer) {
-        clearTimeout(loadTimer);
-        loadTimer = null;
-      }
-    }
-
-    function startLoading() {
-      isLoading = true;
-      hideRefresh();
+    async function init() {
       loader.classList.add('active');
-    }
+      hideRefresh();
 
-    function setupImageLoad(img) {
-      img.classList.remove('loaded');
-      if (img.complete) {
-        img.classList.add('loaded');
-      } else {
-        img.onload = () => img.classList.add('loaded');
-        img.onerror = () => img.classList.add('loaded');
-      }
-    }
-
-    function init() {
-      startLoading();
-      showSlide(viewOrder[0]);
-
-      const firstImg = slides[viewOrder[0]].querySelector('img');
+      const firstSlide = slides[viewOrder[0]];
+      const firstImg = firstSlide.querySelector('img');
       firstImg.fetchPriority = 'high';
-      setupImageLoad(firstImg);
+      
+      await ensureReady(firstImg);
 
-      // Timer di sicurezza: max 1 secondo
-      loadTimer = setTimeout(finishLoading, MAX_WAIT_MS);
+      loader.classList.remove('active');
+      showSlide(viewOrder[0]);
+      showRefresh();
 
-      // Se l'img carica prima del timer, finisci subito
-      const checkLoaded = () => {
-        if (firstImg.classList.contains('loaded') && isLoading) {
-          finishLoading();
-        }
-      };
-      firstImg.addEventListener('load', checkLoaded);
-      firstImg.addEventListener('error', checkLoaded);
-
-      // Precarica le altre in background
       requestAnimationFrame(() => {
         setTimeout(() => {
           slides.forEach((s, i) => {
-            if (i !== viewOrder[0]) {
-              const img = s.querySelector('img');
-              setupImageLoad(img);
-            }
+            if (i !== viewOrder[0]) ensureReady(s.querySelector('img'));
           });
-        }, 100);
+        }, 50);
       });
     }
 
-    function refresh() {
+    async function refresh() {
       if (isLoading) return;
-      startLoading();
+      isLoading = true;
+      hideRefresh();
+      loader.classList.add('active');
 
       currentPos++;
       if (currentPos >= total) {
@@ -418,25 +389,21 @@
         currentPos = 0;
       }
 
+      const targetSlide = slides[viewOrder[currentPos]];
+      const targetImg = targetSlide.querySelector('img');
+
+      await ensureReady(targetImg);
+
       hideAll();
+      loader.classList.remove('active');
       showSlide(viewOrder[currentPos]);
+      showRefresh();
 
-      const targetImg = slides[viewOrder[currentPos]].querySelector('img');
-      setupImageLoad(targetImg);
-
-      // Max 1 secondo di attesa
-      loadTimer = setTimeout(finishLoading, MAX_WAIT_MS);
-
-      const checkLoaded = () => {
-        if (targetImg.classList.contains('loaded') && isLoading) {
-          finishLoading();
-        }
-      };
-      targetImg.addEventListener('load', checkLoaded);
-      targetImg.addEventListener('error', checkLoaded);
+      isLoading = false;
     }
 
     init();
+
     refreshBtn.addEventListener('click', refresh);
 
     // Lightbox + History API
