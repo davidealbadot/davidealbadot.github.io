@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Davide Albanese</title>
 
+<!-- Font serif stile Claude (Source Serif 4, l'alternativa open-source più vicina a Tiempos) -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..500;1,8..60,300..500&display=swap" rel="stylesheet">
@@ -38,6 +39,7 @@
     min-height: 100vh;
   }
 
+  /* Header / menu minimale, come nell'originale */
   header {
     width: 100%;
     padding: 24px 32px;
@@ -57,6 +59,20 @@
     text-decoration: underline;
   }
 
+  .home-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.85;
+    transition: opacity 0.15s ease;
+  }
+
+  .home-icon:hover {
+    opacity: 1;
+    text-decoration: none;
+  }
+
+  /* Contenuto centrale */
   main {
     flex: 1;
     display: flex;
@@ -79,9 +95,6 @@
     margin: 0 auto 36px;
     display: block;
     background-color: #eee;
-    opacity: 0;
-    transform: scale(0.96);
-    animation: fadeInScale 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.05s forwards;
   }
 
   .bio {
@@ -92,15 +105,7 @@
 
   .bio p {
     margin-bottom: 22px;
-    opacity: 0;
-    transform: translateY(18px);
-    animation: fadeUp 0.85s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
   }
-
-  /* Stagger: ogni paragrafo appare dopo il precedente */
-  .bio p:nth-child(1) { animation-delay: 0.2s; }
-  .bio p:nth-child(2) { animation-delay: 0.4s; }
-  .bio p:nth-child(3) { animation-delay: 0.6s; }
 
   .bio a {
     color: var(--link-color);
@@ -113,13 +118,12 @@
     text-decoration-color: rgba(26,26,26,0.9);
   }
 
+  /* Footer con link social, come l'originale */
   footer {
     width: 100%;
     padding: 24px 32px;
     text-align: center;
     font-size: 15px;
-    opacity: 0;
-    animation: fadeUp 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.9s forwards;
   }
 
   footer a {
@@ -131,20 +135,6 @@
     text-decoration: underline;
   }
 
-  @keyframes fadeUp {
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  @keyframes fadeInScale {
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-
   @media (max-width: 480px) {
     .bio { font-size: 17px; }
     header, footer { padding: 20px; }
@@ -153,6 +143,7 @@
 </head>
 <body>
 
+
 <main>
   <div class="content">
     <img class="avatar" src="avatar.jpg" alt="Foto profilo">
@@ -160,12 +151,14 @@
     <div class="bio">
       <p>
         I live in Cavaion Veronese. In 2015, I started building a sports community on Instagram, which I sold in 2020 (+1.2M followers).
+
+
       </p>
       <p>
         Now I invest in people who are shaping a desirable future 🚀
       </p>
       <p>
-        You can discover my <a href="/writing">writing</a>, <a href="https://x.com/davide_will/media">graphics</a> & <a href="photographs.html">photos</a>.
+          You can discover my <a href="/writing">writing</a>, <a href="https://x.com/davide_will/media">graphics</a> & <a href="photographs.html">photos</a>.
       </p>
     </div>
   </div>
