@@ -81,7 +81,7 @@
       pointer-events: none;
     }
 
-    /* Loader */
+    /* Loader con citazione Popper */
     .loader {
       position: fixed;
       inset: 0;
@@ -97,32 +97,31 @@
       display: flex;
     }
 
-    .loader-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: #8a8580;
-      opacity: 0.25;
-      animation: pulse 1.2s ease-in-out infinite;
+    .popper-quote {
+      font-family: "Libre Baskerville", Georgia, serif;
+      font-style: italic;
+      font-size: 17px;
+      line-height: 1.6;
+      color: #6a6560;
+      text-align: center;
+      max-width: 300px;
+      padding: 0 24px;
+      opacity: 0;
+      animation: fadeInQuote 0.5s ease 0.1s forwards;
     }
 
-    .loader-dot:nth-child(2) {
-      animation-delay: 0.2s;
+    .popper-quote cite {
+      display: block;
+      margin-top: 14px;
+      font-style: normal;
+      font-size: 11px;
+      color: #9a9590;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
     }
 
-    .loader-dot:nth-child(3) {
-      animation-delay: 0.4s;
-    }
-
-    @keyframes pulse {
-      0%, 100% {
-        opacity: 0.25;
-        transform: scale(0.7);
-      }
-      50% {
-        opacity: 1;
-        transform: scale(1.2);
-      }
+    @keyframes fadeInQuote {
+      to { opacity: 1; }
     }
 
     /* Tasto refresh */
@@ -271,16 +270,17 @@
       .refresh-btn svg { width: 20px; height: 20px; }
       .play-btn { width: 70px; height: 30px; border-radius: 15px; bottom: 20px; }
       .play-btn svg { width: 12px; height: 12px; }
-      .loader-dot { width: 8px; height: 8px; }
+      .popper-quote { font-size: 15px; max-width: 260px; }
     }
   </style>
 </head>
 <body>
 
   <div class="loader" id="loader">
-    <div class="loader-dot"></div>
-    <div class="loader-dot"></div>
-    <div class="loader-dot"></div>
+    <blockquote class="popper-quote">
+      "La scienza è l'unica cattedrale che l'umanità costruisce insieme."
+      <cite>— Karl Popper</cite>
+    </blockquote>
   </div>
 
   <main class="gallery">
@@ -320,7 +320,7 @@
     const refreshBtn = document.getElementById('refreshBtn');
     const loader = document.getElementById('loader');
     const total = slides.length;
-    const MIN_LOADER_MS = 800;
+    const MIN_LOADER_MS = 800; // tempo minimo per leggere la citazione
 
     async function ensureReady(img) {
       if (!img.complete) {
@@ -360,6 +360,7 @@
       refreshBtn.classList.remove('visible');
     }
 
+    // Aspetta almeno N ms dal momento in cui il loader è apparso
     async function waitMinTime(startTime) {
       const elapsed = Date.now() - startTime;
       if (elapsed < MIN_LOADER_MS) {
@@ -372,6 +373,7 @@
       loader.classList.add('active');
       const loaderStart = Date.now();
 
+      // Forza il browser a fare il paint del loader prima di caricare
       await new Promise(r => requestAnimationFrame(r));
       await new Promise(r => requestAnimationFrame(r));
 
@@ -386,6 +388,7 @@
       showSlide(viewOrder[0]);
       showRefresh();
 
+      // Precarica le altre in background
       requestAnimationFrame(() => {
         setTimeout(() => {
           slides.forEach((s, i) => {
@@ -429,6 +432,7 @@
 
     refreshBtn.addEventListener('click', refresh);
 
+    // Lightbox + History API
     const lightbox = document.getElementById('lightbox');
     const lightboxImg = document.getElementById('lightboxImg');
     const playBtn = document.getElementById('playBtn');
